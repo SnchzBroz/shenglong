@@ -4,60 +4,26 @@
   <meta charset="UTF-8">
   <title>Ruleta Shenlong</title>
   <style>
-    /* Quita márgenes y relleno para usar toda la ventana */
+    /* Ocupamos toda la pantalla, fondo verde para chroma key */
     html, body {
-      margin: 0; 
+      margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      overflow: hidden; 
+      overflow: hidden;
       font-family: Arial, sans-serif;
-      background-color: green; /* Fondo verde para la ruleta */
+      background-color: green; /* Fondo verde */
     }
 
-    /* Contenedor a pantalla completa para videos */
-    #video-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: black;
-      display: none; /* Se mostrará al iniciar */
-      z-index: 10;
-    }
-
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;  /* Se "estira" manteniendo proporción y recorta si sobra */
-      display: block;
-    }
-
-    /* Botón "Iniciar" en el centro de la pantalla */
-    #btnIniciar {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 20px 40px;
-      font-size: 1.5rem;
-      cursor: pointer;
-      z-index: 100;
-    }
-
-    /* Contenedor de la ruleta (inicialmente oculto) */
+    /* Contenedor de la ruleta */
     #ruleta-container {
-      position: absolute;
-      top: 0;
-      left: 0;
       width: 100%;
       height: 100%;
-      display: none;
       text-align: center;
-      z-index: 1; /* Debajo del video */
+      position: relative;
     }
 
+    /* Lienzo de la ruleta */
     #ruleta-canvas {
       width: 600px;
       height: 600px;
@@ -67,75 +33,36 @@
       margin-top: 40px;
     }
 
+    /* Logo en el centro de la ruleta (clic para girar) */
     #ruleta-logo {
-      position: relative;
       width: 100px;
       height: 100px;
-      cursor: pointer; /* Indica que se puede clicar */
-      margin-top: -340px; 
+      cursor: pointer;
+      position: relative;
+      margin-top: -340px; /* Ajusta para centrar sobre el canvas */
     }
 
+    /* Mensaje de resultado */
     #resultado {
       font-size: 3rem;
       color: yellow;
       text-shadow: 2px 2px 4px black;
       margin-top: 20px;
-      display: none;
+      display: none; /* Se mostrará cuando haya resultado */
     }
 
+    /* Botón para repetir la ruleta */
     #btnRepetir {
       margin-top: 20px;
       padding: 10px 20px;
       font-size: 1.2rem;
       cursor: pointer;
-      display: none;
+      display: none; /* Aparece cuando acaba la ruleta */
     }
   </style>
 </head>
 <body>
-  <!-- Botón para iniciar la reproducción -->
-  <button id="btnIniciar">Iniciar</button>
-
-  <!-- Contenedor de videos -->
-  <div id="video-container">
-    <!-- Video 1: esferas -->
-    <video id="videoEsferas" 
-           crossorigin="anonymous"
-           preload="auto"
-           controls>
-      <source src="https://raw.githubusercontent.com/SnchzBroz/shenglong/main/esferas.mp4" type="video/mp4">
-      Tu navegador no soporta video HTML5.
-    </video>
-
-    <!-- Video 2: Shenron -->
-    <video id="videoShenron"
-           crossorigin="anonymous"
-           preload="auto"
-           style="display:none">
-      <source src="https://raw.githubusercontent.com/SnchzBroz/shenglong/main/Shenron%20Chroma%20Key.mp4" type="video/mp4">
-      Tu navegador no soporta video HTML5.
-    </video>
-
-    <!-- Video 3: Musica -->
-    <video id="videoMusica"
-           crossorigin="anonymous"
-           preload="auto"
-           style="display:none">
-      <source src="https://raw.githubusercontent.com/SnchzBroz/shenglong/main/musica.mp4" type="video/mp4">
-      Tu navegador no soporta video HTML5.
-    </video>
-
-    <!-- Audio: Voz -->
-    <audio id="audioVoz"
-           crossorigin="anonymous"
-           preload="auto"
-           style="display:none">
-      <source src="https://raw.githubusercontent.com/SnchzBroz/shenglong/main/voz.aac" type="audio/aac">
-      Tu navegador no soporta audio HTML5.
-    </audio>
-  </div>
-
-  <!-- Contenedor de la ruleta -->
+  <!-- Contenedor principal de la ruleta -->
   <div id="ruleta-container">
     <canvas id="ruleta-canvas"></canvas><br>
     <img id="ruleta-logo"
@@ -150,29 +77,17 @@
 
   <script>
     /*************************************************************
-     * Referencias del DOM
+     * Referencias a elementos del DOM
      *************************************************************/
-    const btnIniciar      = document.getElementById('btnIniciar');
-    const videoContainer  = document.getElementById('video-container');
-    const videoEsferas    = document.getElementById('videoEsferas');
-    const videoShenron    = document.getElementById('videoShenron');
-    const videoMusica     = document.getElementById('videoMusica');
-    const audioVoz        = document.getElementById('audioVoz');
     const ruletaContainer = document.getElementById('ruleta-container');
     const ruletaCanvas    = document.getElementById('ruleta-canvas');
     const ruletaLogo      = document.getElementById('ruleta-logo');
     const resultadoDiv    = document.getElementById('resultado');
     const btnRepetir      = document.getElementById('btnRepetir');
 
-    let endedCount = 0;
-
-    // Sonidos de la ruleta (ejemplo, sustituye si necesitas)
-    const audioSanchezBroz = new Audio("https://raw.githubusercontent.com/SnchzBroz/shenglong/main/sanchezbroz.mp3");
-    const sonidoGiro       = new Audio("https://www.soundjay.com/buttons/button-09a.mp3");
-    const sonidoDesacelera = new Audio("https://www.soundjay.com/buttons/button-10a.mp3");
-    const sonidoResultado  = new Audio("https://www.soundjay.com/buttons/button-3.mp3");
-
-    // Opciones de la ruleta
+    /*************************************************************
+     * Configuración de la ruleta
+     *************************************************************/
     const opciones = [
       "Opción 1",
       "Opción 2",
@@ -188,111 +103,55 @@
     const numOpciones   = opciones.length;
     const anguloSeccion = 360 / numOpciones;
 
+    const ctx = ruletaCanvas.getContext('2d');
+
     let girando       = false;
     let anguloActual  = 0;
     let velocidadGiro = 0;
     let animacionFrame;
-    const ctx = ruletaCanvas.getContext('2d');
 
     /*************************************************************
-     * Botón Iniciar
+     * Sonidos (modifica las URLs según tu repositorio)
      *************************************************************/
-    btnIniciar.addEventListener('click', () => {
-      // Ocultamos el botón
-      btnIniciar.style.display = 'none';
-
-      // Mostramos contenedor de videos
-      videoContainer.style.display = 'block';
-      // Aseguramos que el primer video esté visible (por si estaba en display:none)
-      videoEsferas.style.display = 'block';
-
-      // Reiniciamos contadores
-      endedCount = 0;
-
-      // Empezamos con el primer video
-      videoEsferas.currentTime = 0;
-      videoEsferas.play().catch(err => {
-        console.error("Error al reproducir esferas:", err);
-      });
-    });
+    const audioSanchezBroz = new Audio("https://raw.githubusercontent.com/SnchzBroz/shenglong/main/sanchezbroz.mp3");
+    const sonidoGiro       = new Audio("https://www.soundjay.com/buttons/button-09a.mp3");
+    const sonidoResultado  = new Audio("https://www.soundjay.com/buttons/button-3.mp3");
+    // Si deseas un sonido de desaceleración, puedes agregarlo.
 
     /*************************************************************
-     * Reproducción en cadena de videos
-     *************************************************************/
-    videoEsferas.addEventListener('ended', () => {
-      // Ocultamos el primer video
-      videoEsferas.style.display = 'none';
-
-      // Inicia Shenron
-      videoShenron.style.display = 'block';
-      videoShenron.currentTime = 0;
-      videoShenron.play().catch(err => {
-        console.error("Error al reproducir Shenron:", err);
-      });
-
-      // A los 2 seg. de iniciar Shenron, arrancamos musica y voz
-      setTimeout(() => {
-        videoMusica.style.display = 'block';
-        videoMusica.currentTime = 0;
-        videoMusica.play().catch(err => {
-          console.error("Error al reproducir Musica:", err);
-        });
-
-        audioVoz.currentTime = 0;
-        audioVoz.play().catch(err => {
-          console.error("Error al reproducir Voz:", err);
-        });
-      }, 2000);
-    });
-
-    videoShenron.addEventListener('ended', ()=> checkAllEnded());
-    videoMusica.addEventListener('ended',  ()=> checkAllEnded());
-    audioVoz.addEventListener('ended',     ()=> checkAllEnded());
-
-    function checkAllEnded(){
-      endedCount++;
-      // Cuando los tres (Shenron, Musica, Voz) han terminado:
-      if (endedCount === 3) {
-        videoShenron.style.display = 'none';
-        videoMusica.style.display  = 'none';
-        // Ocultamos contenedor de videos
-        videoContainer.style.display = 'none';
-
-        // Mostramos la ruleta
-        ruletaContainer.style.display = 'block';
-        dibujarRuleta();
-      }
-    }
-
-    /*************************************************************
-     * Ruleta
+     * Funciones para dibujar y girar la ruleta
      *************************************************************/
     function dibujarRuleta() {
-      // Tamaño fijo en el canvas
+      // Ajustamos el canvas a un tamaño fijo
       const w = ruletaCanvas.width  = 600;
       const h = ruletaCanvas.height = 600;
-      const centroX = w/2;
-      const centroY = h/2;
-      const radio   = Math.min(centroX, centroY) - 10;
 
+      const centroX = w / 2;
+      const centroY = h / 2;
+      const radio   = Math.min(centroX, centroY) - 10; 
+
+      // Limpiamos el canvas
       ctx.clearRect(0, 0, w, h);
-      for (let i = 0; i < numOpciones; i++) {
-        const angInicio = (anguloSeccion * i + anguloActual) * Math.PI/180;
-        const angFin    = (anguloSeccion * (i+1) + anguloActual) * Math.PI/180;
 
-        // Secciones alternando color
+      // Dibujamos cada sección
+      for (let i = 0; i < numOpciones; i++) {
+        const angInicio = (anguloSeccion * i + anguloActual) * Math.PI / 180;
+        const angFin    = (anguloSeccion * (i + 1) + anguloActual) * Math.PI / 180;
+
+        // Alternamos colores de las secciones
         ctx.fillStyle = (i % 2 === 0) ? "#f1c40f" : "#e67e22";
+
         ctx.beginPath();
         ctx.moveTo(centroX, centroY);
         ctx.arc(centroX, centroY, radio, angInicio, angFin);
         ctx.closePath();
         ctx.fill();
 
-        // Texto
+        // Texto en cada sección
         ctx.save();
         ctx.fillStyle = "#000";
         ctx.translate(centroX, centroY);
-        ctx.rotate((angInicio + angFin)/2);
+        ctx.rotate((angInicio + angFin) / 2);
         ctx.textAlign = "right";
         ctx.font = "bold 18px sans-serif";
         ctx.fillText(opciones[i], radio - 10, 5);
@@ -303,9 +162,10 @@
     function actualizarRuleta() {
       anguloActual += velocidadGiro;
       anguloActual %= 360;
-      velocidadGiro *= 0.97; // frenado
+      // Desaceleramos de manera progresiva
+      velocidadGiro *= 0.97;
 
-      // Sonido girando
+      // Sonido mientras gira
       if (velocidadGiro > 5) {
         if (sonidoGiro.paused) {
           sonidoGiro.currentTime = 0;
@@ -314,36 +174,37 @@
       }
 
       if (velocidadGiro < 0.3) {
+        // Paramos
         velocidadGiro = 0;
         girando = false;
         cancelAnimationFrame(animacionFrame);
 
-        // Paramos sonido de giro
+        // Detenemos el sonido de giro
         sonidoGiro.pause();
         sonidoGiro.currentTime = 0;
 
-        // Sonido resultado
+        // Sonido final
         sonidoResultado.play().catch(()=>{});
 
-        // Determinar opción ganadora
-        const anguloFinal = (anguloActual % 360 + 360) % 360; 
-        const index = Math.floor(((360 - anguloFinal + anguloSeccion/2) % 360) / anguloSeccion);
+        // Calculamos la opción ganadora
+        const anguloFinal = (anguloActual % 360 + 360) % 360;
+        const index = Math.floor(((360 - anguloFinal + anguloSeccion / 2) % 360) / anguloSeccion);
         const opcionGanadora = opciones[index];
 
-        // Mostrar resultado
+        // Mostramos el resultado
         resultadoDiv.innerText = "¡Ganaste: " + opcionGanadora + "!";
         resultadoDiv.style.display = "block";
 
-        // Confeti
+        // Lanzamos confeti
         lanzarConfeti();
 
-        // A 1 segundo, "sanchezbroz.mp3"
+        // A 1 segundo, reproducimos "sanchezbroz.mp3"
         setTimeout(() => {
           audioSanchezBroz.play().catch(()=>{});
         }, 1000);
 
-        // Botón repetir
-        btnRepetir.style.display = "inline-block";
+        // Mostramos el botón "Repetir"
+        btnRepetir.style.display = 'inline-block';
         return;
       }
 
@@ -355,26 +216,27 @@
       if (girando) return;
       girando = true;
       resultadoDiv.style.display = 'none';
-      btnRepetir.style.display = 'none';
+      btnRepetir.style.display   = 'none';
 
-      // Reiniciar
+      // Reiniciamos el sonido de resultado por si estaba sonando
       sonidoResultado.pause();
       sonidoResultado.currentTime = 0;
 
-      // Velocidad inicial aleatoria
-      velocidadGiro = 15 + Math.random()*10;
+      // Velocidad de giro inicial (aleatoria)
+      velocidadGiro = 15 + Math.random() * 10;
 
-      // Iniciar sonido de giro
+      // Iniciamos el sonido de giro
       sonidoGiro.currentTime = 0;
       sonidoGiro.play().catch(()=>{});
 
-      // Iniciar animación
+      // Iniciamos animación
       actualizarRuleta();
     }
 
+    // Función para lanzar confeti
     function lanzarConfeti() {
-      const duracion = 2000; 
-      const end = Date.now() + duracion;
+      const duration = 2 * 1000; // 2 segundos
+      const end = Date.now() + duration;
       (function frame() {
         confetti({
           particleCount: 5,
@@ -392,37 +254,28 @@
     }
 
     /*************************************************************
-     * Evento de click en el logo para girar
+     * Eventos
      *************************************************************/
+    // Girar la ruleta al hacer clic en el logo
     ruletaLogo.addEventListener('click', girarRuleta);
 
-    /*************************************************************
-     * Botón Repetir
-     *************************************************************/
+    // Botón para repetir
     btnRepetir.addEventListener('click', () => {
-      // Ocultamos ruleta, resultado, y botón
-      ruletaContainer.style.display = 'none';
+      // Ocultamos el resultado y el botón
       resultadoDiv.style.display = 'none';
-      btnRepetir.style.display = 'none';
+      btnRepetir.style.display   = 'none';
 
-      // Reiniciar videos
-      videoShenron.pause(); videoShenron.currentTime = 0; videoShenron.style.display = 'none';
-      videoMusica.pause(); videoMusica.currentTime = 0; videoMusica.style.display = 'none';
-      audioVoz.pause();    audioVoz.currentTime = 0;
-
-      // Reiniciamos contadores
-      endedCount = 0;
-
-      // Mostramos de nuevo contenedor de videos
-      videoContainer.style.display = 'block';
-      videoEsferas.style.display = 'block';
-
-      // Reproducimos el primer video
-      videoEsferas.currentTime = 0;
-      videoEsferas.play().catch(err => {
-        console.error("Error al reproducir esferas:", err);
-      });
+      // Reseteamos la ruleta
+      anguloActual  = 0;
+      velocidadGiro = 0;
+      dibujarRuleta();
     });
+
+    /*************************************************************
+     * Inicialización
+     *************************************************************/
+    // Dibujamos la ruleta al cargar la página
+    dibujarRuleta();
   </script>
 </body>
 </html>
