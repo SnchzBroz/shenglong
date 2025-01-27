@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Ruleta Shenlong</title>
   <style>
-    /* Toda la pantalla, fondo verde */
+    /* Ocupan toda la pantalla, fondo verde */
     html, body {
       margin: 0;
       padding: 0;
@@ -15,7 +15,7 @@
       background-color: green; /* Chroma key */
     }
 
-    /* Contenedor principal (flex para centrar) */
+    /* Contenedor principal (flex) para centrar vertical y horizontal */
     #ruleta-container {
       display: flex;
       flex-direction: column;
@@ -26,7 +26,7 @@
       position: relative;
     }
 
-    /* Envoltorio para la ruleta (canvas) y la flecha */
+    /* Envoltorio de la ruleta (canvas) + flecha */
     #ruleta-wrapper {
       position: relative;
       width: 600px;
@@ -42,36 +42,38 @@
       background: transparent;
     }
 
-    /* FLECHA a la derecha, apuntando hacia adentro (izquierda) */
+    /* Flecha a la derecha, apuntando hacia adentro (izquierda) */
     #flecha {
       position: absolute;
       top: 50%;
-      right: 0;
+      right: 0; 
       transform: translateY(-50%);
-      width: 0;
+      width: 0; 
       height: 0;
       border-top: 20px solid transparent;
       border-bottom: 20px solid transparent;
-      border-left: 20px solid red; /* la punta queda hacia la izquierda */
+      border-left: 20px solid red; /* Punta hacia la izquierda */
       z-index: 2;
     }
 
-    /* Logo grande al centro, cubriendo la ruleta
-       Inicia con scale(4) para estar "gigante"
-    */
+    /* LOGO inicial: anchura = 75% de la ventana (viewport).
+       Escala(1) al inicio, pero con un tamaño grande real. */
     #big-logo {
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(4);
-      transform-origin: center;
-      transition: transform 2s ease; /* animación de 2s al "encoger" */
-      z-index: 3; /* Encima de la ruleta y flecha */
-      cursor: pointer; /* para indicar que se puede clicar */
-    }
-    /* Clase que encoje el logo de scale(4) a scale(1) */
-    #big-logo.shrink {
       transform: translate(-50%, -50%) scale(1);
+      transform-origin: center;
+      width: 75vw;    /* 75% del ancho de la pantalla */
+      height: auto;   /* conserva proporción */
+      transition: transform 1s ease; /* encoge más rápido (1s) */
+      z-index: 3; 
+      cursor: pointer;
+    }
+
+    /* Al encogerse, pasa de scale(1) a scale(0.2) */
+    #big-logo.shrink {
+      transform: translate(-50%, -50%) scale(0.2);
     }
 
     /* Mensaje de resultado */
@@ -100,10 +102,10 @@
   <div id="ruleta-wrapper">
     <div id="flecha"></div>
     <canvas id="ruleta-canvas"></canvas>
-    <!-- Logo grande superpuesto, que luego se encoge -->
+    <!-- Logo grande (75% ancho). Al hacer clic, se encoge y arranca la ruleta -->
     <img id="big-logo"
          src="https://raw.githubusercontent.com/SnchzBroz/shenglong/main/Nuevo%20Logo.png"
-         alt="Logo Shenlong" />
+         alt="Logo Shenlong">
   </div>
 
   <div id="resultado"></div>
@@ -127,7 +129,7 @@ const resultadoDiv  = document.getElementById('resultado');
 const btnRepetir    = document.getElementById('btnRepetir');
 
 /*************************************************************
- * Sonidos (ajusta URLs si difieren en tu repo)
+ * Sonidos (ajusta URLs según tu repositorio)
  *************************************************************/
 const audioSanchezBroz = new Audio("https://raw.githubusercontent.com/SnchzBroz/shenglong/main/sanchezbroz.mp3");
 const sonidoGiro       = new Audio("https://www.soundjay.com/buttons/button-09a.mp3");
@@ -153,16 +155,16 @@ const anguloSeccion = 360 / numOpciones;
 
 // Variables de giro
 let anguloActual  = 0;
-let velocidadGiro = 0;  // grados/frame
+let velocidadGiro = 0; 
 let girando       = false;
 let animacionFrame;
-let startTime     = 0;  // para medir segundos
+let startTime     = 0; // para contar segundos de giro
 
 /*************************************************************
  * Dibujar la ruleta
  *************************************************************/
 function dibujarRuleta() {
-  // Ajustar canvas al tamaño del contenedor
+  // Ajustar canvas al tamaño de su contenedor
   const w = ruletaCanvas.width  = ruletaWrapper.offsetWidth;
   const h = ruletaCanvas.height = ruletaWrapper.offsetHeight;
 
@@ -176,6 +178,7 @@ function dibujarRuleta() {
     const angInicio = (anguloSeccion * i + anguloActual) * Math.PI / 180;
     const angFin    = (anguloSeccion * (i + 1) + anguloActual) * Math.PI / 180;
 
+    // Alternar colores
     ctx.fillStyle = (i % 2 === 0) ? "#f1c40f" : "#e67e22";
 
     ctx.beginPath();
@@ -197,26 +200,24 @@ function dibujarRuleta() {
 }
 
 /*************************************************************
- * Animación de giro (mínimo 10s)
+ * Animación de giro (mínimo 10 s)
  *************************************************************/
 function actualizarRuleta(timestamp) {
-  // Definimos startTime la primera vez
   if (!startTime) {
-    startTime = timestamp;
+    startTime = timestamp; 
   }
-  const elapsed = (timestamp - startTime) / 1000; // en segundos
+  const elapsed = (timestamp - startTime) / 1000; // seg transcurridos
 
-  // Avanzar ángulo
+  // Rotamos
   anguloActual += velocidadGiro;
   anguloActual %= 360;
 
-  // Mantener velocidad constante al menos 10s
+  // Mantener velocidad constante 10s, luego desacelerar
   if (elapsed >= 10) {
-    // Después de 10s, desaceleramos gradualmente
-    velocidadGiro *= 0.98;
+    velocidadGiro *= 0.98; // factor de desaceleración
   }
 
-  // Sonido de giro si velocidad > cierto umbral
+  // Sonido de giro si va rápido
   if (velocidadGiro > 1) {
     if (sonidoGiro.paused) {
       sonidoGiro.currentTime = 0;
@@ -224,25 +225,25 @@ function actualizarRuleta(timestamp) {
     }
   }
 
-  // Paramos cuando sea suficientemente lenta
+  // Cuando es muy lenta, detenemos
   if (velocidadGiro < 0.3) {
     velocidadGiro = 0;
     girando = false;
     cancelAnimationFrame(animacionFrame);
 
-    // Detenemos sonido de giro
+    // Paramos el sonido de giro
     sonidoGiro.pause();
     sonidoGiro.currentTime = 0;
 
     // Sonido de resultado
     sonidoResultado.play().catch(()=>{});
 
-    // Determinar opción ganadora
-    // Flecha está a la derecha (ángulo 90° si 0° es arriba)
+    // Determinamos la opción ganadora
+    // Flecha a la derecha => 0° es arriba, 90° es derecha
+    // Ajustamos la fórmula para la derecha:
     const anguloFinal = (anguloActual % 360 + 360) % 360;
-    // Ajustamos para que el "0" sea la derecha:
-    let arrowAngle = (90 - anguloFinal + 360) % 360;
-    // Luego usamos la fórmula de la sección
+    const arrowAngle  = (90 - anguloFinal + 360) % 360;
+    // Sección ganadora
     const index = Math.floor((arrowAngle + anguloSeccion/2) / anguloSeccion);
     const opcionGanadora = opciones[index % numOpciones];
 
@@ -253,29 +254,29 @@ function actualizarRuleta(timestamp) {
     // Confeti
     lanzarConfeti();
 
-    // 1s después -> "sanchezbroz.mp3"
+    // 1s después -> sanchezbroz.mp3
     setTimeout(() => {
       audioSanchezBroz.play().catch(()=>{});
     }, 1000);
 
-    // Aparece botón Repetir
+    // Botón Repetir
     btnRepetir.style.display = 'inline-block';
     return;
   }
 
-  // Dibujamos frame
+  // Dibujamos
   dibujarRuleta();
   animacionFrame = requestAnimationFrame(actualizarRuleta);
 }
 
 /*************************************************************
- * Iniciar giro
+ * Función para iniciar el giro
  *************************************************************/
 function girarRuleta() {
   if (girando) return;
   girando = true;
 
-  // Ocultamos resultado
+  // Ocultamos resultado y botón
   resultadoDiv.style.display = 'none';
   btnRepetir.style.display   = 'none';
 
@@ -283,33 +284,28 @@ function girarRuleta() {
   sonidoResultado.pause();
   sonidoResultado.currentTime = 0;
 
-  // Velocidad inicial (ajusta al gusto)
+  // Velocidad inicial
   velocidadGiro = 12;
+  startTime     = 0; // reiniciamos contador
 
-  // Reiniciamos el contador de tiempo
-  startTime = 0;
-
-  // Comenzamos la animación
   animacionFrame = requestAnimationFrame(actualizarRuleta);
 }
 
 /*************************************************************
- * LOGO GRANDE -> Encoge al hacer clic -> Luego gira la ruleta
+ * LOGO GRANDE (75% de ancho) -> Al hacer clic => shrink => gira
  *************************************************************/
 bigLogo.addEventListener('click', () => {
-  // Si el logo ya está encogido, no hacemos nada
+  // Si ya está encogido, no hacemos nada
   if (bigLogo.classList.contains('shrink')) return;
 
-  // Iniciamos la transición "shrink"
+  // Activamos la clase .shrink -> scale(0.2)
   bigLogo.classList.add('shrink');
 
-  // Al terminar la transición, empieza el giro
+  // Cuando termina la transición, giramos
   bigLogo.addEventListener('transitionend', onLogoShrunk, { once: true });
 });
 
 function onLogoShrunk() {
-  // Logo ya encogido (scale 1)
-  // Iniciamos la ruleta
   girarRuleta();
 }
 
@@ -324,10 +320,7 @@ function lanzarConfeti() {
       particleCount: 5,
       angle: Math.random() * 60 + 160,
       spread: 55,
-      origin: {
-        x: Math.random(),
-        y: Math.random() - 0.2
-      }
+      origin: { x: Math.random(), y: Math.random() - 0.2 }
     });
     if (Date.now() < end) {
       requestAnimationFrame(frame);
@@ -336,30 +329,30 @@ function lanzarConfeti() {
 }
 
 /*************************************************************
- * Botón REPE-TIR
+ * Botón Repetir
  *************************************************************/
 btnRepetir.addEventListener('click', () => {
-  // Reseteamos la ruleta
+  // Reseteamos ruleta
   anguloActual  = 0;
   velocidadGiro = 0;
   dibujarRuleta();
 
-  // Ocultamos el resultado y el botón
+  // Ocultamos resultado y botón
   resultadoDiv.style.display = 'none';
   btnRepetir.style.display   = 'none';
 
-  // Quitamos la clase "shrink" para que el logo vuelva a grande
+  // Quitamos la clase .shrink para que el logo
+  // vuelva a verse grande (75% ancho)
   bigLogo.classList.remove('shrink');
-  // Forzamos un reflow
+  // Forzamos un reflow para que reconozca el cambio de clase
   void bigLogo.offsetWidth;
 
-  // Ahora el logo está grande, esperamos a que el usuario
-  // dé clic de nuevo para encogerlo y girar la ruleta.
+  // Ahora el logo está grande otra vez y
+  // esperará un clic para encogerse y girar.
 });
 
 /*************************************************************
  * Al cargar la página, dibujamos la ruleta
- * (El logo inicia grande, sin encoger, hasta que el user clic)
  *************************************************************/
 window.addEventListener('load', () => {
   dibujarRuleta();
