@@ -138,7 +138,7 @@ const resultadoDiv  = document.getElementById('resultado');
 const btnRepetir    = document.getElementById('btnRepetir');
 
 /*************************************************************
- * Sonidos (ajusta URLs a tu repositorio si difieren)
+ * Sonidos
  *************************************************************/
 const audioSanchezBroz = new Audio("https://raw.githubusercontent.com/SnchzBroz/shenglong/main/sanchezbroz.mp3");
 const sonidoGiro       = new Audio("https://www.soundjay.com/buttons/button-09a.mp3");
@@ -213,7 +213,7 @@ function dibujarRuleta() {
  *************************************************************/
 function actualizarRuleta(timestamp) {
   if (!startTime) {
-    startTime = timestamp; 
+    startTime = timestamp;
   }
   const elapsed = (timestamp - startTime) / 1000; // seg transcurridos
 
@@ -247,26 +247,28 @@ function actualizarRuleta(timestamp) {
     // Sonido resultado
     sonidoResultado.play().catch(()=>{});
 
-    // Determinar opción ganadora (la flecha está arriba => 0° es TOP)
+    // Determinar opción ganadora
     const anguloFinal = (anguloActual % 360 + 360) % 360;
-    // Para flecha arriba => index = floor(( (360 - anguloFinal) + angSeccion/2 ) / angSeccion)
-    // (porque "360 - angFinal" nos da lo que está "arriba")
-    const arrowAngle = (360 - anguloFinal + 360) % 360;  
-    // sector
-    const index = Math.floor((arrowAngle + anguloSeccion / 2) / anguloSeccion) % numOpciones;
+    
+    // *** AQUÍ MODIFICAMOS el cálculo para que el TOP sea el sector ganador ***
+    // Antes se usaba: (360 - anguloFinal + 360) % 360
+    // Lo sustituimos por (anguloFinal + 360) % 360 para que el que quede arriba sea el ganador
+    const arrowAngle = (anguloFinal + 360) % 360;           // <--- cambio
+    const index = Math.floor((arrowAngle + anguloSeccion / 2) / anguloSeccion) % numOpciones; // <---
+
     const opcionGanadora = opciones[index];
 
     // Mostramos resultado
     resultadoDiv.innerText = "¡Ganaste: " + opcionGanadora + "!";
     resultadoDiv.style.display = 'block';
 
-    // Mostramos flecha en la parte superior, apuntando hacia abajo
+    // Flecha en la parte superior
     colocarFlechaGanadora(anguloFinal, index);
 
     // Confeti
     lanzarConfeti();
 
-    // 1s después, "sanchezbroz.mp3"
+    // 1s después, reproducimos "sanchezbroz.mp3"
     setTimeout(() => {
       audioSanchezBroz.play().catch(()=>{});
     }, 1000);
@@ -292,13 +294,12 @@ function colocarFlechaGanadora(anguloFinal, index) {
   const cy = h / 2;
   const r  = Math.min(cx, cy) - 10;
 
-  // La parte superior del círculo es: (x = cx, y = cy - r)
+  // La parte superior del círculo (12 en punto) es: (x = cx, y = cy - r)
   flecha.style.left = cx + "px";
   flecha.style.top  = (cy - r) + "px";
 
-  // La flecha, por defecto, "apunta hacia abajo" (border-top: 30px solid red).
-  // No necesitamos rotarla si ya está hecha para apuntar abajo. 
-  flecha.style.transform = "translate(-50%, 0)"; // céntrala horizontalmente
+  // La flecha, por defecto, "apunta hacia abajo".
+  flecha.style.transform = "translate(-50%, 0)";
 
   // Mostrar flecha
   flecha.style.display = 'block';
