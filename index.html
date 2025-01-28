@@ -4,18 +4,15 @@
   <meta charset="UTF-8">
   <title>Ruleta Shenlong</title>
   <style>
-    /* Toda la ventana, fondo verde */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
+      background-color: green;
       font-family: Arial, sans-serif;
-      background-color: green; /* Chroma key */
     }
-
-    /* Contenedor principal (flex) para centrar la ruleta */
     #ruleta-container {
       display: flex;
       flex-direction: column;
@@ -25,8 +22,6 @@
       height: 100vh;
       position: relative;
     }
-
-    /* Envoltorio de la ruleta (canvas) */
     #ruleta-wrapper {
       position: relative;
       width: 600px;
@@ -34,48 +29,26 @@
       max-width: 90vw;
       max-height: 90vw;
     }
-
-    /* Lienzo de la ruleta */
     #ruleta-canvas {
       width: 100%;
       height: 100%;
       background: transparent;
     }
-
-    /* Flecha en la parte superior, apuntando hacia abajo.
-       Inicialmente oculta; aparecerá en la posición ganadora. */
-    #flecha {
-      display: none; /* Se muestra al final */
-      position: absolute;
-      width: 0;
-      height: 0;
-      /* Triángulo que apunta hacia abajo => border-top = color */
-      border-left: 15px solid transparent;
-      border-right: 15px solid transparent;
-      border-top: 30px solid red;
-      z-index: 2;
-    }
-
-    /* Logo: 60% del ancho de la página */
     #big-logo {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) scale(1);
       transform-origin: center;
-      width: 60vw;     /* 60% del ancho de la ventana */
-      height: auto;    /* Mantiene proporción */
-      transition: transform 1s ease; /* Se encoge rápido (1s) */
+      width: 60vw;
+      height: auto;
+      transition: transform 1s ease;
       z-index: 3;
       cursor: pointer;
     }
-
-    /* Clase para encoger el logo */
     #big-logo.shrink {
       transform: translate(-50%, -50%) scale(0.2);
     }
-
-    /* Resultado */
     #resultado {
       font-size: 3rem;
       color: yellow;
@@ -83,26 +56,22 @@
       margin-top: 30px;
       display: none;
     }
-
-    /* Botón Repetir: más bonito */
     #btnRepetir {
       margin-top: 20px;
       padding: 15px 30px;
       font-size: 1.3rem;
       cursor: pointer;
       display: none;
-
-      /* Estilo personalizado */
       background: linear-gradient(45deg, #f39c12, #f1c40f);
       color: #fff;
       border: none;
       border-radius: 10px;
-      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
       transition: transform 0.2s;
     }
     #btnRepetir:hover {
       transform: scale(1.05);
-      box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.4);
+      box-shadow: 3px 3px 7px rgba(0,0,0,0.4);
     }
   </style>
 </head>
@@ -111,8 +80,6 @@
 <div id="ruleta-container">
   <div id="ruleta-wrapper">
     <canvas id="ruleta-canvas"></canvas>
-    <div id="flecha"></div>
-    <!-- Logo grande, 60% viewport -->
     <img id="big-logo"
          src="https://raw.githubusercontent.com/SnchzBroz/shenglong/main/Nuevo%20Logo.png"
          alt="Logo Shenlong">
@@ -121,242 +88,145 @@
   <button id="btnRepetir">Repetir</button>
 </div>
 
-<!-- Librería confeti -->
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.3.2/dist/confetti.browser.min.js"></script>
 
 <script>
-/*************************************************************
- * Referencias del DOM
- *************************************************************/
 const ruletaWrapper = document.getElementById('ruleta-wrapper');
 const ruletaCanvas  = document.getElementById('ruleta-canvas');
 const ctx           = ruletaCanvas.getContext('2d');
-
-const flecha        = document.getElementById('flecha');
 const bigLogo       = document.getElementById('big-logo');
 const resultadoDiv  = document.getElementById('resultado');
 const btnRepetir    = document.getElementById('btnRepetir');
 
-/*************************************************************
- * Sonidos (ajusta URLs a tu repositorio si difieren)
- *************************************************************/
-const audioSanchezBroz = new Audio("https://raw.githubusercontent.com/SnchzBroz/shenglong/main/sanchezbroz.mp3");
-const sonidoGiro       = new Audio("https://www.soundjay.com/buttons/button-09a.mp3");
-const sonidoResultado  = new Audio("https://www.soundjay.com/buttons/button-3.mp3");
-
-/*************************************************************
- * Configuración de la ruleta
- *************************************************************/
 const opciones = [
-  "Opción 1",
-  "Opción 2",
-  "Opción 3",
-  "Opción 4",
-  "Opción 5",
-  "Opción 6",
-  "Opción 7",
-  "Opción 8",
-  "Opción 9",
-  "Opción 10"
+  "Opción 1","Opción 2","Opción 3","Opción 4","Opción 5",
+  "Opción 6","Opción 7","Opción 8","Opción 9","Opción 10"
 ];
 const numOpciones   = opciones.length;
 const anguloSeccion = 360 / numOpciones;
 
-// Variables de giro
 let anguloActual  = 0;
 let velocidadGiro = 0;
 let girando       = false;
 let animacionFrame;
-let startTime     = 0; // Para medir los 5s mínimo
+let startTime     = 0;
+let randomSpinTime = 0;
 
-/*************************************************************
- * Dibujar la ruleta
- *************************************************************/
+const audioSanchezBroz = new Audio("https://raw.githubusercontent.com/SnchzBroz/shenglong/main/sanchezbroz.mp3");
+const sonidoGiro       = new Audio("https://www.soundjay.com/buttons/button-3.mp3");
+const drumMusic        = new Audio("https://www.fesliyanstudios.com/play-mp3/387"); // Ejemplo tambores
+drumMusic.loop = true;
+
 function dibujarRuleta() {
-  // Ajustamos el canvas al tamaño de su contenedor
   const w = ruletaCanvas.width  = ruletaWrapper.offsetWidth;
   const h = ruletaCanvas.height = ruletaWrapper.offsetHeight;
-
-  const centroX = w / 2;
-  const centroY = h / 2;
-  const radio   = Math.min(centroX, centroY) - 10;
-
+  const cx = w / 2;
+  const cy = h / 2;
+  const r  = Math.min(cx, cy) - 10;
   ctx.clearRect(0, 0, w, h);
-
   for (let i = 0; i < numOpciones; i++) {
-    const angInicio = (anguloSeccion * i + anguloActual) * Math.PI / 180;
-    const angFin    = (anguloSeccion * (i + 1) + anguloActual) * Math.PI / 180;
-
-    // Alternar color
+    const angInicio = (anguloSeccion*i + anguloActual) * Math.PI/180;
+    const angFin    = (anguloSeccion*(i+1)+ anguloActual) * Math.PI/180;
     ctx.fillStyle = (i % 2 === 0) ? "#f1c40f" : "#e67e22";
-
     ctx.beginPath();
-    ctx.moveTo(centroX, centroY);
-    ctx.arc(centroX, centroY, radio, angInicio, angFin);
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, angInicio, angFin);
     ctx.closePath();
     ctx.fill();
-
-    // Texto
     ctx.save();
     ctx.fillStyle = "#000";
-    ctx.translate(centroX, centroY);
-    ctx.rotate((angInicio + angFin) / 2);
+    ctx.translate(cx, cy);
+    ctx.rotate((angInicio + angFin)/2);
     ctx.textAlign = "right";
     ctx.font = "bold 18px sans-serif";
-    ctx.fillText(opciones[i], radio - 10, 5);
+    ctx.fillText(opciones[i], r - 10, 5);
     ctx.restore();
   }
 }
 
-/*************************************************************
- * Animación de giro (5 segundos mínimo)
- *************************************************************/
 function actualizarRuleta(timestamp) {
   if (!startTime) {
-    startTime = timestamp; 
+    startTime = timestamp;
   }
-  const elapsed = (timestamp - startTime) / 1000; // seg transcurridos
-
-  // Ajustar ángulo
+  const elapsed = (timestamp - startTime) / 1000;
   anguloActual += velocidadGiro;
   anguloActual %= 360;
 
-  // Mantener velocidad en los primeros 5s, luego desacelerar
-  if (elapsed >= 5) {
+  if (elapsed >= randomSpinTime) {
     velocidadGiro *= 0.98;
   }
-
-  // Sonido de giro si va rápido
-  if (velocidadGiro > 1) {
-    if (sonidoGiro.paused) {
-      sonidoGiro.currentTime = 0;
-      sonidoGiro.play().catch(()=>{});
-    }
+  if (velocidadGiro > 1 && sonidoGiro.paused) {
+    sonidoGiro.currentTime = 0;
+    sonidoGiro.play().catch(()=>{});
   }
-
-  // Paramos cuando sea muy lento
   if (velocidadGiro < 0.3) {
     velocidadGiro = 0;
     girando = false;
     cancelAnimationFrame(animacionFrame);
-
-    // Parar sonido giro
+    drumMusic.pause();
     sonidoGiro.pause();
     sonidoGiro.currentTime = 0;
-
-    // Sonido resultado
-    sonidoResultado.play().catch(()=>{});
-
-    // Determinar opción ganadora (la flecha está arriba => 0° es TOP)
-    const anguloFinal = (anguloActual % 360 + 360) % 360;
-    // Para flecha arriba => index = floor(( (360 - anguloFinal) + angSeccion/2 ) / angSeccion)
-    // (porque "360 - angFinal" nos da lo que está "arriba")
-    const arrowAngle = (360 - anguloFinal + 360) % 360;  
-    // sector
-    const index = Math.floor((arrowAngle + anguloSeccion / 2) / anguloSeccion) % numOpciones;
-    const opcionGanadora = opciones[index];
-
-    // Mostramos resultado
-    resultadoDiv.innerText = "¡Ganaste: " + opcionGanadora + "!";
+    const anguloFinal = (anguloActual + 360) % 360;
+    const arrowAngle  = (360 - anguloFinal) % 360;
+    const index = Math.floor((arrowAngle + anguloSeccion/2) / anguloSeccion) % numOpciones;
+    resultadoDiv.innerText = "¡Ganaste: " + opciones[index] + "!";
     resultadoDiv.style.display = 'block';
-
-    // Mostramos flecha en la parte superior, apuntando hacia abajo
-    colocarFlechaGanadora(anguloFinal, index);
-
-    // Confeti
     lanzarConfeti();
-
-    // 1s después, "sanchezbroz.mp3"
     setTimeout(() => {
       audioSanchezBroz.play().catch(()=>{});
     }, 1000);
-
-    // Botón Repetir
     btnRepetir.style.display = 'inline-block';
-
     return;
   }
-
-  // Dibujamos la ruleta
   dibujarRuleta();
   animacionFrame = requestAnimationFrame(actualizarRuleta);
 }
 
-/*************************************************************
- * Colocar la flecha en la parte superior, apuntando al centro
- *************************************************************/
-function colocarFlechaGanadora(anguloFinal, index) {
-  const w = ruletaCanvas.width;
-  const h = ruletaCanvas.height;
-  const cx = w / 2;
-  const cy = h / 2;
-  const r  = Math.min(cx, cy) - 10;
-
-  // La parte superior del círculo es: (x = cx, y = cy - r)
-  flecha.style.left = cx + "px";
-  flecha.style.top  = (cy - r) + "px";
-
-  // La flecha, por defecto, "apunta hacia abajo" (border-top: 30px solid red).
-  // No necesitamos rotarla si ya está hecha para apuntar abajo. 
-  flecha.style.transform = "translate(-50%, 0)"; // céntrala horizontalmente
-
-  // Mostrar flecha
-  flecha.style.display = 'block';
-}
-
-/*************************************************************
- * Iniciar el giro
- *************************************************************/
 function girarRuleta() {
   if (girando) return;
   girando = true;
-
-  // Ocultamos resultado y flecha al iniciar
   resultadoDiv.style.display = 'none';
-  flecha.style.display       = 'none';
   btnRepetir.style.display   = 'none';
-
-  // Reiniciar sonido de resultado
-  sonidoResultado.pause();
-  sonidoResultado.currentTime = 0;
-
-  // Velocidad inicial
+  sonidoGiro.pause();
+  sonidoGiro.currentTime = 0;
+  startTime = 0;
+  randomSpinTime = 3 + Math.random() * 3; 
   velocidadGiro = 12;
-  startTime     = 0; // reiniciamos conteo
-
+  drumMusic.currentTime = 0;
+  drumMusic.play().catch(()=>{});
   animacionFrame = requestAnimationFrame(actualizarRuleta);
 }
 
-/*************************************************************
- * Al hacer clic en el logo grande => shrink => gira
- *************************************************************/
 bigLogo.addEventListener('click', () => {
-  // Si ya está encogido, no hacemos nada
   if (bigLogo.classList.contains('shrink')) return;
-
   bigLogo.classList.add('shrink');
-  // Cuando termina la transición => girar
-  bigLogo.addEventListener('transitionend', onLogoShrunk, { once: true });
+  bigLogo.addEventListener('transitionend', () => girarRuleta(), { once:true });
 });
 
-function onLogoShrunk() {
-  girarRuleta();
-}
+btnRepetir.addEventListener('click', () => {
+  anguloActual  = 0;
+  velocidadGiro = 0;
+  dibujarRuleta();
+  resultadoDiv.style.display = 'none';
+  btnRepetir.style.display   = 'none';
+  bigLogo.classList.remove('shrink');
+  void bigLogo.offsetWidth;
+});
 
-/*************************************************************
- * Confeti
- *************************************************************/
+window.addEventListener('load', () => {
+  dibujarRuleta();
+});
 function lanzarConfeti() {
   const duration = 2000;
   const end = Date.now() + duration;
   (function frame() {
     confetti({
       particleCount: 5,
-      angle: Math.random() * 60 + 160,
+      angle: Math.random()*60 + 160,
       spread: 55,
       origin: {
         x: Math.random(),
-        y: Math.random() - 0.2
+        y: Math.random()-0.2
       }
     });
     if (Date.now() < end) {
@@ -364,34 +234,7 @@ function lanzarConfeti() {
     }
   })();
 }
-
-/*************************************************************
- * Botón Repetir
- *************************************************************/
-btnRepetir.addEventListener('click', () => {
-  // Reiniciamos la ruleta
-  anguloActual  = 0;
-  velocidadGiro = 0;
-  dibujarRuleta();
-
-  // Ocultamos resultado, flecha, botón
-  resultadoDiv.style.display = 'none';
-  flecha.style.display       = 'none';
-  btnRepetir.style.display   = 'none';
-
-  // Devolvemos el logo a grande (60%).
-  bigLogo.classList.remove('shrink');
-  // Forzamos reflow
-  void bigLogo.offsetWidth;
-  // Esperamos nuevo clic para encoger y girar.
-});
-
-/*************************************************************
- * Al cargar la página, dibujamos la ruleta
- *************************************************************/
-window.addEventListener('load', () => {
-  dibujarRuleta();
-});
 </script>
+
 </body>
 </html>
